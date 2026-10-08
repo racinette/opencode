@@ -201,6 +201,10 @@ export type TuiPromptInfo = {
 export type TuiPromptRef = {
   focused: boolean
   current: TuiPromptInfo
+  /** Display-only text after the full input. Reactive when read inside a Solid effect. */
+  readonly ghost: string
+  /** Set the displayed suffix, or clear it with an empty string. Does not edit the input. */
+  setGhost(text: string): void
   set(prompt: TuiPromptInfo): void
   reset(): void
   blur(): void
