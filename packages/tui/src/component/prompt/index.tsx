@@ -36,7 +36,7 @@ import { expandPastedTextPlaceholders, expandTrackedPastedText } from "../../pro
 import { usePromptStash } from "../../prompt/stash"
 import { DialogStash } from "../dialog-stash"
 import { type AutocompleteRef, Autocomplete } from "./autocomplete"
-import { useRenderer, useTerminalDimensions, type JSX } from "@opentui/solid"
+import { extend, useRenderer, useTerminalDimensions, type JSX } from "@opentui/solid"
 import type { AssistantMessage, FilePart, UserMessage } from "@opencode-ai/sdk/v2"
 import { Locale } from "../../util/locale"
 import { errorMessage } from "../../util/error"
@@ -57,6 +57,15 @@ import { usePromptWorkspace } from "./workspace"
 import { usePromptMove } from "./move"
 import { readLocalAttachment } from "./local-attachment"
 import { useLocation } from "../../context/location"
+import { PromptTextareaRenderable } from "./ghost"
+
+declare module "@opentui/solid" {
+  interface OpenTUIComponents {
+    prompt_textarea: typeof PromptTextareaRenderable
+  }
+}
+
+extend({ prompt_textarea: PromptTextareaRenderable })
 
 registerOpencodeSpinner()
 
@@ -89,6 +98,8 @@ function pastedFilepath(value: string, platform: string) {
 export type PromptRef = {
   focused: boolean
   current: PromptInfo
+  readonly ghost: string
+  setGhost(text: string): void
   set(prompt: PromptInfo): void
   reset(): void
   blur(): void
@@ -144,6 +155,7 @@ export function Prompt(props: PromptProps) {
   let input: TextareaRenderable
   let anchor: BoxRenderable
   const [inputTarget, setInputTarget] = createSignal<TextareaRenderable | undefined>()
+  const [ghost, setGhost] = createSignal("")
 
   const leader = useLeaderActive()
   const local = useLocal()
@@ -585,6 +597,12 @@ export function Prompt(props: PromptProps) {
     },
     get current() {
       return store.prompt
+    },
+    get ghost() {
+      return ghost()
+    },
+    setGhost(text) {
+      setGhost(text)
     },
     focus() {
       input.focus()
@@ -1366,9 +1384,11 @@ export function Prompt(props: PromptProps) {
             flexGrow={1}
             width="100%"
           >
-            <textarea
+            <prompt_textarea
               width="100%"
-              placeholder={placeholderText()}
+              placeholder={ghost() ? undefined : placeholderText()}
+              ghostText={ghost()}
+              ghostColor={theme.textMuted}
               placeholderColor={theme.textMuted}
               textColor={leader() ? theme.textMuted : theme.text}
               focusedTextColor={leader() ? theme.textMuted : theme.text}
